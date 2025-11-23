@@ -16,7 +16,6 @@ public final class UserMapper {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
-                .password(user.getPassword()) // ou null si tu ne veux pas l’exposer
                 .role(user.getRole() != null ? user.getRole().name() : null)
                 .build();
     }
@@ -35,8 +34,6 @@ public final class UserMapper {
     }
 
     public static User fromDto(UserDto dto) {
-        if (dto == null) return null;
-
         User user = new User();
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
@@ -44,12 +41,14 @@ public final class UserMapper {
         user.setPassword(dto.getPassword());
 
         if (dto.getRole() != null) {
-            String roleStr = dto.getRole().toUpperCase();
             try {
-                user.setRole(Role.valueOf(roleStr));
+                user.setRole(User.Role.valueOf(dto.getRole().toUpperCase()));
             } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("Invalid role: " + dto.getRole());
+                // on relance avec un message clair -> catché par le handler ci-dessous
+                throw new IllegalArgumentException("Rôle invalide : " + dto.getRole());
             }
+        } else {
+            user.setRole(null);
         }
 
         return user;

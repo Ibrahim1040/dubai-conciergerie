@@ -43,7 +43,7 @@ public class UserController {
         return UserMapper.toDto(user);
     }
 
-    // 3) Créer un utilisateur (OWNER ou ADMIN)
+
     @PostMapping
     @Operation(summary = "Créer un nouvel utilisateur")
     public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto dto) {
