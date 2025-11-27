@@ -1,39 +1,35 @@
 package com.ibrahim.dubaiconciergerie.demo.dto;
 
-import com.ibrahim.dubaiconciergerie.demo.entity.Property;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
+@Builder
 public class PropertyDto {
 
+    private Long id;
+
     @NotBlank
-    @Size(max = 150)
     private String title;
 
     @NotBlank
-    @Size(max = 100)
     private String city;
 
     @NotBlank
-    @Size(max = 255)
     private String address;
 
-    @NotNull
     @Min(1)
-    private Integer capacity;
+    private int capacity;
 
-    @NotNull
-    private Property.RentalType rentalType;
+    @NotBlank
+    private String rentalType; // SHORT_TERM ou LONG_TERM
 
-    @Min(0)
     private Double nightlyPrice;
-
-    @Min(0)
     private Double monthlyPrice;
 
-    // Optionnel : si tu veux lier à un owner précis
-    private Long ownerId;
+    private Long ownerId; // très important
 }

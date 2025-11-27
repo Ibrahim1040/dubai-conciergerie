@@ -44,7 +44,7 @@ public class OwnerPropertyController {
                 .city(dto.getCity())
                 .address(dto.getAddress())
                 .capacity(dto.getCapacity())
-                .rentalType(dto.getRentalType())
+                .rentalType(Property.RentalType.valueOf(dto.getRentalType()))
                 .nightlyPrice(dto.getNightlyPrice())
                 .monthlyPrice(dto.getMonthlyPrice())
                 .owner(owner)

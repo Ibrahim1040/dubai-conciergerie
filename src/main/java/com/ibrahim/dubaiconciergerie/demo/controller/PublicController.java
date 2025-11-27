@@ -64,7 +64,7 @@ public class PublicController {
         property.setCapacity(dto.getCapacity());
 
         // conversion de String vers enum
-        property.setRentalType(dto.getRentalType());
+        property.setRentalType(Property.RentalType.valueOf(dto.getRentalType()));
 
         property.setNightlyPrice(dto.getNightlyPrice());
         property.setMonthlyPrice(dto.getMonthlyPrice());

@@ -3,9 +3,10 @@ package com.ibrahim.dubaiconciergerie.demo.service.impl;
 import com.ibrahim.dubaiconciergerie.demo.dto.UserDto;
 import com.ibrahim.dubaiconciergerie.demo.dto.UserMapper;
 import com.ibrahim.dubaiconciergerie.demo.entity.User;
-import com.ibrahim.dubaiconciergerie.demo.exception.ResourceNotFoundException;
 import com.ibrahim.dubaiconciergerie.demo.repository.UserRepository;
 import com.ibrahim.dubaiconciergerie.demo.service.UserService;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,63 +17,77 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository,
+                           PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
+    // ========= LISTER =========
     @Override
-    public User create(UserDto dto) {
-        User user = UserMapper.fromDto(dto);
-        return userRepository.save(user);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public List<User> getAll() {
         return userRepository.findAll();
     }
 
+    // ========= GET BY ID =========
     @Override
-    @Transactional(readOnly = true)
     public User getById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "User not found with id " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Utilisateur non trouvé"));
     }
 
+    // ========= CREER =========
+    @Override
+    public User create(UserDto dto) {
+
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("Email déjà utilisé");
+        }
+
+        User user = UserMapper.fromDto(dto);
+
+        // Encoder le mot de passe
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        return userRepository.save(user);
+    }
+
+    // ========= UPDATE =========
     @Override
     public User update(Long id, UserDto dto) {
+
         User existing = getById(id);
 
         existing.setFirstName(dto.getFirstName());
         existing.setLastName(dto.getLastName());
-        existing.setEmail(dto.getEmail());
 
-        if (dto.getPassword() != null) {
-            existing.setPassword(dto.getPassword());
+        // email modifié ? vérification
+        if (!existing.getEmail().equals(dto.getEmail())) {
+            if (userRepository.existsByEmail(dto.getEmail())) {
+                throw new IllegalArgumentException("Email déjà utilisé");
+            }
+            existing.setEmail(dto.getEmail());
         }
 
-        if (dto.getRole() != null) {
-            existing.setRole(User.Role.valueOf(dto.getRole()));  // 🔥 ici la conversion String -> enum
+        // update role
+        existing.setRole(User.Role.valueOf(dto.getRole()));
+
+        // update password seulement si présent
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            existing.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
         return userRepository.save(existing);
     }
 
+    // ========= DELETE =========
     @Override
-    @Transactional
     public void delete(Long id) {
-        User user = getById(id);
-
-        // Si c’est un owner et qu’il a encore des propriétés, on bloque
-        if (user.getProperties() != null && !user.getProperties().isEmpty()) {
-            throw new IllegalStateException(
-                    "Impossible de supprimer cet utilisateur : il possède encore des propriétés. " +
-                            "Veuillez d'abord supprimer ou réassigner ses biens."
-            );
+        if (!userRepository.existsById(id)) {
+            throw new EntityNotFoundException("Utilisateur introuvable");
         }
-
-        userRepository.delete(user);
+        userRepository.deleteById(id);
     }
 }
