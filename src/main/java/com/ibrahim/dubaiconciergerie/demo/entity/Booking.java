@@ -17,33 +17,33 @@ public class Booking {
     public enum Status {
         PENDING,
         CONFIRMED,
-        CANCELLED
+        CANCELED
     }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "property_id", nullable = false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "property_id")
     private Property property;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String guestName;
 
-    @Column(nullable = false, length = 150)
+    @Column(nullable = false)
     private String guestEmail;
 
-    @Column(nullable = false)
+    @Column(nullable = false,name = "start_date")
     private LocalDate startDate;
 
-    @Column(nullable = false)
+    @Column(nullable = false,name = "end_date")
     private LocalDate endDate;
 
+    @Column(nullable = false)
     private Double totalPrice;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    @Builder.Default
-    private Status status = Status.PENDING;
+    @Column(nullable = false)
+    private Status status;
 }

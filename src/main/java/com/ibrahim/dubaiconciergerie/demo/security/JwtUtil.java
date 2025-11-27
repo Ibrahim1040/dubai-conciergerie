@@ -2,6 +2,7 @@ package com.ibrahim.dubaiconciergerie.demo.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -24,6 +25,13 @@ public class JwtUtil {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
+
+    public String getCurrentUserEmail() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getPrincipal() == null) return null;
+        return auth.getName(); // Username = email
+    }
+
 
     public String extractEmail(String token) {
         return Jwts.parserBuilder()

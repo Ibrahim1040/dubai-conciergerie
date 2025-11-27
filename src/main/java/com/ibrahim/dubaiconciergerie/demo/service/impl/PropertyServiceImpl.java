@@ -92,24 +92,14 @@ public class PropertyServiceImpl implements PropertyService {
     }
 
     @Override
-    public Property createProperty(Property property) {
-
-        if (property.getOwner() == null) {
-            throw new RuntimeException("Owner is required");
-        }
-
-        if (property.getTitle() == null || property.getTitle().isBlank()) {
-            throw new RuntimeException("Title is required");
-        }
-
-        return propertyRepo.save(property);
-    }
-
-    @Override
     public List<Property> getPropertiesForOwner(User owner) {
         return propertyRepo.findByOwner(owner);
     }
 
+    @Override
+    public Property createProperty(Property property) {
+        return propertyRepo.save(property);
+    }
 
 
 }

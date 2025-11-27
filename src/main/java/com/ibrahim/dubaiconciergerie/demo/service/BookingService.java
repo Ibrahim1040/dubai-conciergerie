@@ -7,15 +7,11 @@ import java.util.List;
 
 public interface BookingService {
 
-    Booking createBooking(Booking booking);
+    Booking create(BookingDto dto);
 
-    Booking createBooking(Long propertyId, BookingDto dto);
+    List<Booking> getAll();
 
-    Booking getBooking(Long id);
+    Booking getById(Long id);
 
-    List<Booking> getBookingsForProperty(Long propertyId);
-
-    Booking cancelBooking(Long id);
-
-    Booking updateStatus(Long bookingId, Booking.Status status);
+    void delete(Long id);
 }

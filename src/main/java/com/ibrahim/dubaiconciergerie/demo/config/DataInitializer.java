@@ -12,23 +12,36 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class DataInitializer {
 
     @Bean
-    public CommandLineRunner initAdmin(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    CommandLineRunner init(UserRepository userRepo, PasswordEncoder encoder) {
         return args -> {
 
-            if (userRepository.findByEmail("admin@example.com").isEmpty()) {
-                User admin = new User();
-                admin.setEmail("admin@example.com");
-                admin.setPassword(passwordEncoder.encode("admin123"));
-                admin.setFirstName("Admin");
-                admin.setLastName("System");
-                admin.setRole(Role.ADMIN);
+            if (userRepo.findByEmail("superadmin@example.com").isEmpty()) {
+                User admin = User.builder()
+                        .firstName("Super")
+                        .lastName("Admin")
+                        .email("superadmin@example.com")
+                        .password(encoder.encode("Admin2024")) // HASH OBLIGATOIRE
+                        .role(User.Role.ADMIN)
+                        .build();
 
-                userRepository.save(admin);
+                userRepo.save(admin);
 
-                System.out.println("=== ADMIN CREATED ===");
-            } else {
-                System.out.println("=== ADMIN ALREADY EXISTS ===");
+                System.out.println("🔥 ADMIN created: superadmin@example.com / Admin2024");
             }
+            if (userRepo.findByEmail("admin@example.com").isEmpty()) {
+                User admin = User.builder()
+                        .firstName("Admin")
+                        .lastName("System")
+                        .email("admin@example.com")
+                        .password(encoder.encode("admin123"))
+                        .role(Role.ADMIN)
+                        .build();
+                userRepo.save(admin);
+
+                System.out.println("🔥 ADMIN created: admin@example.com / admin123");
+            }
+
         };
     }
+
 }

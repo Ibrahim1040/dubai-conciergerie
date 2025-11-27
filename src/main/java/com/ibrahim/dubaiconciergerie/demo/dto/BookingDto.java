@@ -1,9 +1,6 @@
 package com.ibrahim.dubaiconciergerie.demo.dto;
 
-import com.ibrahim.dubaiconciergerie.demo.entity.Booking;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,31 +13,29 @@ import java.time.LocalDate;
 @Builder
 public class BookingDto {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
 
-    @NotNull
+    @NotNull(message = "propertyId obligatoire")
     private Long propertyId;
 
-    @NotBlank
-    @Size(max = 100)
+    @NotBlank(message = "Nom du client obligatoire")
     private String guestName;
 
-    @NotBlank
-    @Email
-    @Size(max = 150)
+    @Email(message = "Email invalide")
+    @NotBlank(message = "Email du client obligatoire")
     private String guestEmail;
 
-    @NotNull
+    @NotNull(message = "checkIn obligatoire")
     private LocalDate startDate;
 
-    @NotNull
+    @NotNull(message = "checkOut obligatoire")
     private LocalDate endDate;
 
-    @Min(0)
+    @NotNull(message = "Prix total obligatoire")
     private Double totalPrice;
 
-    // optionnel : permettre d'envoyer le statut, sinon PENDING par défaut
+    @Pattern(regexp = "PENDING|CONFIRMED|CANCELED",
+            message = "Status invalide")
     private String status;
 }

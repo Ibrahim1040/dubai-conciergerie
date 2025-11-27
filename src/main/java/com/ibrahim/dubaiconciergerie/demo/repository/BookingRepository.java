@@ -11,19 +11,24 @@ import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
-    // Déjà existant
     List<Booking> findByProperty(Property property);
 
-    // ✅ NOUVELLE VERSION : on passe le statut à exclure en paramètre
+    List<Booking> findByGuestEmail(String guestEmail);
+
     @Query("""
-           SELECT COUNT(b) FROM Booking b
-           WHERE b.property = :property
-             AND b.status <> :excludedStatus
-             AND b.endDate >= :startDate
-             AND b.startDate <= :endDate
-           """)
+    SELECT COUNT(b)
+    FROM Booking b
+    WHERE b.property = :property
+      AND b.status <> :canceled
+      AND (
+            (:startDate BETWEEN b.startDate AND b.endDate)
+            OR (:endDate BETWEEN b.startDate AND b.endDate)
+            OR (b.startDate BETWEEN :startDate AND :endDate)
+          )
+    """)
     long countActiveBookingsInRange(@Param("property") Property property,
                                     @Param("startDate") LocalDate startDate,
                                     @Param("endDate") LocalDate endDate,
-                                    @Param("excludedStatus") Booking.Status excludedStatus);
+                                    @Param("canceled") Booking.Status canceled);
+
 }

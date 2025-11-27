@@ -48,6 +48,9 @@ public class SecurityConfig {
                         // Contact requests admin
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
+                        // OWNER ou ADMIN peuvent gérer les bookings
+                        .requestMatchers("/api/bookings/**").hasAnyRole("OWNER", "ADMIN")
+
                         // Owner
                         .requestMatchers("/api/owner/**").hasAnyRole("OWNER", "ADMIN")
 

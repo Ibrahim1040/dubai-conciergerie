@@ -49,6 +49,7 @@ public class User implements UserDetails {
     private Role role;
 
     @OneToMany(mappedBy = "owner")
+    @JsonIgnore
     private List<Property> properties = new ArrayList<>();
 
 

@@ -1,21 +1,16 @@
 package com.ibrahim.dubaiconciergerie.demo.controller;
 
 import com.ibrahim.dubaiconciergerie.demo.dto.BookingDto;
-import com.ibrahim.dubaiconciergerie.demo.dto.BookingMapper;
-import com.ibrahim.dubaiconciergerie.demo.dto.BookingResponseDto;
 import com.ibrahim.dubaiconciergerie.demo.entity.Booking;
 import com.ibrahim.dubaiconciergerie.demo.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
-@Tag(name = "Bookings")
+@CrossOrigin
 public class BookingController {
 
     private final BookingService bookingService;
@@ -24,31 +19,27 @@ public class BookingController {
         this.bookingService = bookingService;
     }
 
-    // 1) Lister les réservations d’un bien (owner / admin)
-    @GetMapping("/property/{propertyId}")
-    @Operation(summary = "Lister les réservations pour une propriété")
-    public List<BookingResponseDto> getBookingsForProperty(@PathVariable Long propertyId) {
-        List<Booking> bookings = bookingService.getBookingsForProperty(propertyId);
-        return bookings.stream()
-                .map(BookingMapper::toResponseDto)
-                .toList();
+    @PostMapping
+    @Operation(summary = "Créer une réservation")
+    public Booking createBooking(@RequestBody BookingDto dto) {
+        return bookingService.create(dto);
     }
 
-    // 2) Créer une réservation pour une propriété (guest via front)
-    @PostMapping("/property/{propertyId}")
-    @Operation(summary = "Créer une réservation pour une propriété")
-    public BookingResponseDto createBooking(@PathVariable Long propertyId,
-                                            @Valid @RequestBody BookingDto dto) {
-        Booking booking = bookingService.createBooking(propertyId, dto);
-        return BookingMapper.toResponseDto(booking);
+    @GetMapping
+    @Operation(summary = "Lister toutes les réservations")
+    public List<Booking> getBookings() {
+        return bookingService.getAll();
     }
 
-    // 3) Mettre à jour le statut (CONFIRMED / CANCELLED)
-    @PatchMapping("/{bookingId}/status")
-    @Operation(summary = "Changer le statut d’une réservation")
-    public ResponseEntity<BookingResponseDto> updateStatus(@PathVariable Long bookingId,
-                                                           @RequestParam Booking.Status status) {
-        Booking updated = bookingService.updateStatus(bookingId, status);
-        return ResponseEntity.ok(BookingMapper.toResponseDto(updated));
+    @GetMapping("/{id}")
+    @Operation(summary = "Récupérer une réservation par ID")
+    public Booking getBookingById(@PathVariable Long id) {
+        return bookingService.getById(id);
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Supprimer une réservation")
+    public void delete(@PathVariable Long id) {
+        bookingService.delete(id);
     }
 }

@@ -7,18 +7,16 @@ public class PropertyMapper {
 
     // ENTITY → DTO (lecture)
     public static PropertyResponseDto toDto(Property property) {
-        if (property == null) return null;
-
         return PropertyResponseDto.builder()
                 .id(property.getId())
                 .title(property.getTitle())
                 .city(property.getCity())
                 .address(property.getAddress())
                 .capacity(property.getCapacity())
-                .rentalType(Property.RentalType.valueOf(property.getRentalType().name()))
+                .rentalType(property.getRentalType().name())
                 .nightlyPrice(property.getNightlyPrice())
                 .monthlyPrice(property.getMonthlyPrice())
-                .owner(UserMapper.toSummaryDto(property.getOwner()))
+                .ownerId(property.getOwner().getId())
                 .build();
     }
 

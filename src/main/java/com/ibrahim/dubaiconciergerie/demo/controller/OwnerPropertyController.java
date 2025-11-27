@@ -1,6 +1,8 @@
 package com.ibrahim.dubaiconciergerie.demo.controller;
 
 import com.ibrahim.dubaiconciergerie.demo.dto.PropertyDto;
+import com.ibrahim.dubaiconciergerie.demo.dto.PropertyMapper;
+import com.ibrahim.dubaiconciergerie.demo.dto.PropertyResponseDto;
 import com.ibrahim.dubaiconciergerie.demo.entity.Property;
 import com.ibrahim.dubaiconciergerie.demo.entity.User;
 import com.ibrahim.dubaiconciergerie.demo.service.PropertyService;
@@ -27,15 +29,19 @@ public class OwnerPropertyController {
 
     @GetMapping("/{ownerId}")
     @Operation(summary = "Liste les propriétés d'un propriétaire")
-    public List<Property> getOwnerProperties(@PathVariable Long ownerId) {
+    public List<PropertyResponseDto> getOwnerProperties(@PathVariable Long ownerId) {
         User owner = userService.getById(ownerId);
-        return propertyService.getPropertiesForOwner(owner);
+        return propertyService.getPropertiesForOwner(owner)
+                .stream()
+                .map(PropertyMapper::toDto)
+                .toList();
     }
 
     @PostMapping("/{ownerId}")
     @Operation(summary = "Créer une propriété pour un propriétaire")
-    public Property createOwnerProperty(@PathVariable Long ownerId,
-                                        @Valid @RequestBody PropertyDto dto) {
+    public PropertyResponseDto createOwnerProperty(
+            @PathVariable Long ownerId,
+            @Valid @RequestBody PropertyDto dto) {
 
         User owner = userService.getById(ownerId);
 
@@ -50,6 +56,8 @@ public class OwnerPropertyController {
                 .owner(owner)
                 .build();
 
-        return propertyService.createProperty(property);
+        Property saved = propertyService.createProperty(property);
+
+        return PropertyMapper.toDto(saved);
     }
 }

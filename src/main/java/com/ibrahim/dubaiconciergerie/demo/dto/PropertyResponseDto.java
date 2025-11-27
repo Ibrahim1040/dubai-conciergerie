@@ -1,26 +1,18 @@
 package com.ibrahim.dubaiconciergerie.demo.dto;
 
-import com.ibrahim.dubaiconciergerie.demo.entity.Property;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 @Builder
 public class PropertyResponseDto {
-
     private Long id;
     private String title;
     private String city;
     private String address;
-    private Integer capacity;
-    private Property.RentalType  rentalType;
-
-    private Double nightlyPrice;
-    private Double monthlyPrice;
-
-    // résumé du owner (sans password évidemment)
-    private UserSummaryDto owner;
+    private int capacity;
+    private String rentalType;
+    private double nightlyPrice;
+    private double monthlyPrice;
+    private Long ownerId; // toujours utile !
 }
-
