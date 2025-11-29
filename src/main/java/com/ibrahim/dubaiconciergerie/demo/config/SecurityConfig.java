@@ -49,7 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         // OWNER ou ADMIN peuvent gérer les bookings
-                        .requestMatchers("/api/bookings/**").hasAnyRole("OWNER", "ADMIN")
+                        .requestMatchers("/api/bookings/**").permitAll()
 
                         // Owner
                         .requestMatchers("/api/owner/**").hasAnyRole("OWNER", "ADMIN")

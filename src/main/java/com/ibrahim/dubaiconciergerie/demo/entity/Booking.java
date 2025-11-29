@@ -5,45 +5,46 @@ import lombok.*;
 
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "bookings")
 @Getter
 @Setter
+@Entity
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Table(name = "bookings")
 public class Booking {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // Relation vers Property
+    @ManyToOne
+    @JoinColumn(name = "property_id", nullable = false)
+    private Property property;
+
+    @Column(name = "guest_name", nullable = false)
+    private String guestName;
+
+    @Column(name = "guest_email", nullable = false)
+    private String guestEmail;
+
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
+
+    @Column(name = "end_date", nullable = false)
+    private LocalDate endDate;
+
+    @Column(name = "total_price", nullable = false)
+    private Double totalPrice;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status",length = 20, nullable = false)
+    private Status status;
 
     public enum Status {
         PENDING,
         CONFIRMED,
         CANCELED
     }
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "property_id")
-    private Property property;
-
-    @Column(nullable = false)
-    private String guestName;
-
-    @Column(nullable = false)
-    private String guestEmail;
-
-    @Column(nullable = false,name = "start_date")
-    private LocalDate startDate;
-
-    @Column(nullable = false,name = "end_date")
-    private LocalDate endDate;
-
-    @Column(nullable = false)
-    private Double totalPrice;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Status status;
 }

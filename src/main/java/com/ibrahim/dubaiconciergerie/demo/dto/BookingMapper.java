@@ -18,16 +18,28 @@ public class BookingMapper {
                 .build();
     }
 
-    public static BookingDto toDto(Booking b) {
+    public static BookingDto toDto(Booking booking) {
+        if (booking == null) {
+            return null;
+        }
+
         return BookingDto.builder()
-                .id(b.getId())
-                .propertyId(b.getProperty().getId())
-                .guestName(b.getGuestName())
-                .guestEmail(b.getGuestEmail())
-                .startDate(b.getStartDate())
-                .endDate(b.getEndDate())
-                .totalPrice(b.getTotalPrice())
-                .status(b.getStatus().name())
+                .id(booking.getId())
+                .propertyId(
+                        booking.getProperty() != null
+                                ? booking.getProperty().getId()
+                                : null
+                )
+                .guestName(booking.getGuestName())
+                .guestEmail(booking.getGuestEmail())
+                .startDate(booking.getStartDate())
+                .endDate(booking.getEndDate())
+                .totalPrice(booking.getTotalPrice())
+                .status(
+                        booking.getStatus() != null
+                                ? booking.getStatus().name()
+                                : null
+                )
                 .build();
     }
 }

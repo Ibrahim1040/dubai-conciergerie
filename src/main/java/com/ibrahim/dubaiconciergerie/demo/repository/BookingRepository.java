@@ -11,19 +11,15 @@ import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
-    List<Booking> findByProperty(Property property);
-
-    List<Booking> findByGuestEmail(String guestEmail);
-
     @Query("""
-    SELECT COUNT(b)
-    FROM Booking b
-    WHERE b.property = :property
-      AND b.status <> :canceled
-      AND (
-            (:startDate BETWEEN b.startDate AND b.endDate)
-            OR (:endDate BETWEEN b.startDate AND b.endDate)
-            OR (b.startDate BETWEEN :startDate AND :endDate)
+        SELECT COUNT(b)
+        FROM Booking b
+        WHERE b.property = :property
+          AND b.status <> :canceled
+          AND (
+                (:startDate BETWEEN b.startDate AND b.endDate)
+             OR (:endDate   BETWEEN b.startDate AND b.endDate)
+             OR (b.startDate BETWEEN :startDate AND :endDate)
           )
     """)
     long countActiveBookingsInRange(@Param("property") Property property,
@@ -31,4 +27,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                                     @Param("endDate") LocalDate endDate,
                                     @Param("canceled") Booking.Status canceled);
 
+    List<Booking> findByProperty(Property property);
+
+    List<Booking> findByGuestEmail(String guestEmail);
+
+    List<Booking> findByPropertyIdOrderByStartDateAsc(Long propertyId);
+
+    // 👉 Tous les bookings pour une propriété
+    List<Booking> findByPropertyId(Long propertyId);
+
+    // 👉 Tous les bookings pour un owner (via ses propriétés)
+    List<Booking> findByPropertyOwnerId(Long ownerId);
 }
+
