@@ -1,5 +1,6 @@
 package com.ibrahim.dubaiconciergerie.demo.service;
 
+import com.ibrahim.dubaiconciergerie.demo.dto.BookingDto;
 import com.ibrahim.dubaiconciergerie.demo.entity.Booking;
 import com.ibrahim.dubaiconciergerie.demo.entity.Property;
 
@@ -11,7 +12,7 @@ public interface BookingService {
 
     List<Booking> getAll();
 
-    Booking getById(Long id);
+    BookingDto getById(Long id);
 
     void delete(Long id);
 
@@ -24,5 +25,8 @@ public interface BookingService {
     void cancel(Long bookingId);
 
     List<Booking> getByOwner(Long ownerId);
+
+    BookingDto update(Long id, BookingDto dto);
+
 
 }

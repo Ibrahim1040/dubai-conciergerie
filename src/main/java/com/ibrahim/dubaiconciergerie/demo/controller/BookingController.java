@@ -7,6 +7,7 @@ import com.ibrahim.dubaiconciergerie.demo.entity.Property;
 import com.ibrahim.dubaiconciergerie.demo.service.BookingService;
 import com.ibrahim.dubaiconciergerie.demo.service.PropertyService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -91,5 +92,19 @@ public class BookingController {
     public List<Booking> getByOwner(@PathVariable Long ownerId) {
         return bookingService.getByOwner(ownerId);
     }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Récupérer une réservation par son id")
+    public BookingDto getBooking(@PathVariable Long id) {
+        return bookingService.getById(id);
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Mettre à jour une réservation existante")
+    public BookingDto updateBooking(@PathVariable Long id,
+                                    @Valid @RequestBody BookingDto dto) {
+        return bookingService.update(id, dto);
+    }
+
 
 }

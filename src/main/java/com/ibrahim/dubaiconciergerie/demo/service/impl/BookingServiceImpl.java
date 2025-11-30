@@ -91,10 +91,20 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public Booking getById(Long id) {
-        return bookingRepo.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Booking introuvable"));
+    public BookingDto getById(Long id) {
+        Booking booking = bookingRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        return BookingDto.builder()
+                .id(booking.getId())
+                .propertyId(booking.getProperty().getId())
+                .guestName(booking.getGuestName())
+                .guestEmail(booking.getGuestEmail())
+                .startDate(booking.getStartDate())
+                .endDate(booking.getEndDate())
+                .totalPrice(booking.getTotalPrice())
+                .status(booking.getStatus().name())
+                .build();
     }
 
     @Override
@@ -123,5 +133,55 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<Booking> getByOwner(Long ownerId) {
         return bookingRepo.findByPropertyOwnerId(ownerId);
+    }
+
+    @Override
+    public BookingDto update(Long id, BookingDto dto) {
+        Booking booking = bookingRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        // Si tu veux autoriser le changement de propriété :
+        if (dto.getPropertyId() != null && !dto.getPropertyId().equals(booking.getProperty().getId())) {
+            Property property = propertyRepo.findById(dto.getPropertyId())
+                    .orElseThrow(() -> new RuntimeException("Property not found"));
+            booking.setProperty(property);
+        }
+
+        if (dto.getGuestName() != null) {
+            booking.setGuestName(dto.getGuestName());
+        }
+
+        if (dto.getGuestEmail() != null) {
+            booking.setGuestEmail(dto.getGuestEmail());
+        }
+
+        if (dto.getStartDate() != null) {
+            booking.setStartDate(dto.getStartDate());
+        }
+
+        if (dto.getEndDate() != null) {
+            booking.setEndDate(dto.getEndDate());
+        }
+
+        if (dto.getTotalPrice() != null) {
+            booking.setTotalPrice(dto.getTotalPrice());
+        }
+
+        if (dto.getStatus() != null) {
+            booking.setStatus(Booking.Status.valueOf(dto.getStatus())); // CONFIRMED / CANCELED / PENDING
+        }
+
+        Booking saved = bookingRepo.save(booking);
+
+        return BookingDto.builder()
+                .id(saved.getId())
+                .propertyId(saved.getProperty().getId())
+                .guestName(saved.getGuestName())
+                .guestEmail(saved.getGuestEmail())
+                .startDate(saved.getStartDate())
+                .endDate(saved.getEndDate())
+                .totalPrice(saved.getTotalPrice())
+                .status(saved.getStatus().name())
+                .build();
     }
 }
