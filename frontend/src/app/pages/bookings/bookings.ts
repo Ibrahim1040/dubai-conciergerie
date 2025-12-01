@@ -1,14 +1,30 @@
-import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
+// src/app/pages/bookings/bookings.ts
+import {
+  Component,
+  OnInit,
+  ViewChild,
+  ChangeDetectorRef
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatNativeDateModule } from '@angular/material/core';
 import { BookingService } from '../../services/booking.service';
 import { Booking } from '../../models/booking.model';
-import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-bookings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatDatepickerModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatNativeDateModule],
   templateUrl: './bookings.html',
   styleUrl: './bookings.scss'
 })
@@ -31,66 +47,23 @@ export class BookingsComponent implements OnInit {
   loading = false;
   errorMessage = '';
   successMessage = '';
-  todayString = new Date().toISOString().split('T')[0];// "2025-12-01"
+  todayString: string = new Date().toISOString().split('T')[0];
+
   // --- Filtres ---
   filterStatus: 'ALL' | 'PENDING' | 'CONFIRMED' | 'CANCELED' = 'ALL';
   filterClient: string = '';
   filterStartDate: string = '';
   filterEndDate: string = '';
-
-  get filteredBookings(): Booking[] {
-    return this.bookings.filter(b => {
-
-      // filtre statut
-      if (this.filterStatus !== 'ALL' && b.status !== this.filterStatus) {
-        return false;
-      }
-
-      // filtre client (nom ou email)
-      const search = this.filterClient.trim().toLowerCase();
-      if (search) {
-        const name = (b.guestName ?? '').toLowerCase();
-        const email = (b.guestEmail ?? '').toLowerCase();
-        if (!name.includes(search) && !email.includes(search)) {
-          return false;
-        }
-      }
-
-      // filtre date de début (Du)
-      if (this.filterStartDate) {
-        const min = new Date(this.filterStartDate);
-        const start = new Date(b.startDate);
-        // on compare en “date pure”
-        min.setHours(0, 0, 0, 0);
-        start.setHours(0, 0, 0, 0);
-        if (start < min) {
-          return false;
-        }
-      }
-
-      // filtre date de fin (Au)
-      if (this.filterEndDate) {
-        const max = new Date(this.filterEndDate);
-        const end = new Date(b.endDate);
-        max.setHours(0, 0, 0, 0);
-        end.setHours(0, 0, 0, 0);
-        if (end > max) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }
-
-  resetFilters(): void {
-    this.filterStatus = 'ALL';
-    this.filterClient = '';
-    this.filterStartDate = '';
-    this.filterEndDate = '';
-  }
+  filterPropertyId: number | null = null;
+  excludeCanceled = false;
+  startDateModel: Date | null = null;
+  endDateModel: Date | null = null;
+  reservedRanges: { start: Date; end: Date }[] = [];
 
 
+  // résumé
+  totalFilteredNights = 0;
+  totalFilteredAmount = 0;
 
   constructor(
     private bookingService: BookingService,
@@ -101,95 +74,176 @@ export class BookingsComponent implements OnInit {
     this.loadBookings();
   }
 
-  getStatusClass(status?: string): string {
-    switch (status) {
-      case 'CONFIRMED':
-        return 'status-badge status-confirmed';
-      case 'PENDING':
-        return 'status-badge status-pending';
-      case 'CANCELED':
-        return 'status-badge status-canceled';
-      default:
-        return 'status-badge';
-    }
+  // ------- FILTRAGE + RÉSUMÉ --------
+  get filteredBookings(): Booking[] {
+    const term = this.filterClient.trim().toLowerCase();
+
+    const from = this.filterStartDate ? new Date(this.filterStartDate) : null;
+    const to   = this.filterEndDate   ? new Date(this.filterEndDate)   : null;
+
+    if (from) from.setHours(0, 0, 0, 0);
+    if (to)   to.setHours(0, 0, 0, 0);
+
+    const propertyId = this.filterPropertyId || null;
+
+    const filtered = this.bookings.filter((b: Booking) => {
+      // propertyId
+      if (propertyId && b.propertyId !== propertyId) {
+        return false;
+      }
+
+      // client / email
+      if (term) {
+        const inName  = b.guestName?.toLowerCase().includes(term);
+        const inEmail = b.guestEmail?.toLowerCase().includes(term);
+        if (!inName && !inEmail) {
+          return false;
+        }
+      }
+
+      // exclure annulations
+      if (this.excludeCanceled && b.status === 'CANCELED') {
+        return false;
+      }
+
+      // statut
+      if (this.filterStatus !== 'ALL' && b.status !== this.filterStatus) {
+        return false;
+      }
+
+      // période (sur la date d'arrivée)
+      if (from || to) {
+        const start = new Date(b.startDate);
+        start.setHours(0, 0, 0, 0);
+
+        if (from && start < from) {
+          return false;
+        }
+        if (to && start > to) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    this.computeSummary(filtered);
+    return filtered;
   }
 
-  private priceFormatter = new Intl.NumberFormat('de-DE', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  });
-
-  formatPrice(value?: number): string {
-    if (value == null) {
-      return '';
-    }
-    return this.priceFormatter.format(value); // ex: 5000 -> "5.000"
+  resetFilters(): void {
+    this.filterStatus = 'ALL';
+    this.filterClient = '';
+    this.filterStartDate = '';
+    this.filterEndDate = '';
+    this.filterPropertyId = null;
+    this.excludeCanceled = false;
   }
 
+  private computeSummary(list: Booking[]): void {
+    this.totalFilteredNights = list.reduce(
+      (sum, b) => sum + this.getNights(b),
+      0
+    );
+    this.totalFilteredAmount = list.reduce(
+      (sum, b) => sum + (b.totalPrice || 0),
+      0
+    );
+  }
 
+  // ------- CHARGEMENT --------
   loadBookings(): void {
-    console.log('loadBookings() appelé');
     this.loading = true;
     this.errorMessage = '';
 
     this.bookingService.getAll().subscribe({
       next: (data) => {
-        console.log('GET bookings -> succès', data);
         this.bookings = data;
+
+        // on n’est plus en chargement
         this.loading = false;
-        this.cdr.detectChanges();
+
+        // on reset les dates du formulaire de création
+        this.startDateModel = null;
+        this.endDateModel = null;
+
+        // on met à jour les plages réservées pour le datepicker
+        this.refreshReservedRanges();
+
+        // si ton résumé est calculé dans le getter filteredBookings,
+        // pas besoin d'appeler computeSummary ici :
+        // this.computeSummary(this.filteredBookings);  // optionnel
       },
       error: (err) => {
         console.error('GET bookings -> ERREUR', err);
-        this.errorMessage = 'Erreur lors du chargement des réservations';
         this.loading = false;
-        this.cdr.detectChanges();
+        this.errorMessage = 'Erreur lors du chargement des réservations';
       }
     });
   }
 
+
+  private refreshReservedRanges(): void {
+    const propertyId = this.newBooking.propertyId;
+    if (!propertyId) {
+      this.reservedRanges = [];
+      return;
+    }
+
+    const relevant = this.bookings.filter(
+      b => b.propertyId === propertyId && b.status !== 'CANCELED'
+    );
+
+    this.reservedRanges = relevant.map(b => ({
+      start: new Date(b.startDate),
+      end: new Date(b.endDate)
+    }));
+  }
+
+
+  // ------- CRÉATION --------
   createBooking(): void {
     this.errorMessage = '';
     this.successMessage = '';
 
-    // validations front
+    // 1) Champs obligatoires
     if (!this.newBooking.propertyId ||
       !this.newBooking.guestName ||
       !this.newBooking.guestEmail ||
-      !this.newBooking.startDate ||
-      !this.newBooking.endDate) {
+      !this.startDateModel ||
+      !this.endDateModel) {
+
       this.errorMessage =
         'propertyId, guestName, guestEmail, startDate et endDate sont obligatoires';
       return;
     }
 
+    // 2) Prix
     if (this.newBooking.totalPrice < 0) {
       this.errorMessage = 'totalPrice ne peut pas être négatif';
       return;
     }
 
-    // empêcher les dates passées
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const startDate = new Date(this.newBooking.startDate);
+    // 3) Cohérence des dates (avec le modèle du datepicker)
+    const start = this.toDateOnly(this.startDateModel);
+    const end   = this.toDateOnly(this.endDateModel);
 
-    if (startDate < today) {
-      this.errorMessage = 'La date d\'arrivée ne peut pas être dans le passé.';
+    if (end < start) {
+      this.errorMessage = 'La date de départ doit être après la date d’arrivée.';
       return;
     }
 
-    console.log('POST booking ->', this.newBooking);
+    // 4) On copie les dates formatées dans newBooking
+    this.newBooking.startDate = this.formatDate(this.startDateModel);
+    this.newBooking.endDate   = this.formatDate(this.endDateModel);
 
+    // 5) Appel API
     this.bookingService.create(this.newBooking).subscribe({
       next: (created) => {
-        console.log('Réservation créée ->', created);
-
         this.successMessage = 'Réservation créée avec succès';
-
-        // on ajoute l’élément renvoyé par l’API
         this.bookings = [...this.bookings, created];
 
-        // reset du modèle
+        // reset modèle
         this.newBooking = {
           propertyId: 0,
           guestName: '',
@@ -200,7 +254,12 @@ export class BookingsComponent implements OnInit {
           status: 'PENDING'
         };
 
-        // reset du formulaire angular
+        // reset dates du datepicker
+        this.startDateModel = null;
+        this.endDateModel = null;
+        this.refreshReservedRanges();   // on vide les plages (propertyId = 0)
+
+        // reset formulaire Angular
         if (this.bookingForm) {
           this.bookingForm.resetForm({
             propertyId: 0,
@@ -212,8 +271,6 @@ export class BookingsComponent implements OnInit {
             status: 'PENDING'
           });
         }
-
-        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         console.error('Erreur POST /bookings', err);
@@ -246,6 +303,203 @@ export class BookingsComponent implements OnInit {
     });
   }
 
+
+  private toDateOnly(date: Date): Date {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  private formatDate(date: Date | null): string {
+    if (!date) return '';
+
+    const d = this.toDateOnly(date); // garde la date en local (pas d'UTC)
+    const year  = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day   = String(d.getDate()).padStart(2, '0');
+
+    // format "yyyy-MM-dd" pour ton backend (LocalDate)
+    return `${year}-${month}-${day}`;
+  }
+
+
+  // Filtre pour la date d'arrivée
+  startDateFilter = (date: Date | null): boolean => {
+    if (!date) return false;
+
+    const day = this.toDateOnly(date).getTime();
+
+    console.log('startDateModel =', this.startDateModel);
+    console.log('formatted start =', this.formatDate(this.startDateModel));
+
+    // Pas dans le passé
+    const today = this.toDateOnly(new Date()).getTime();
+    if (day < today) return false;
+
+    // Si aucun logement sélectionné : pas de blocage spécial
+    if (!this.newBooking.propertyId) {
+      return true;
+    }
+
+    // Ne pas pouvoir choisir un jour qui EST déjà dans une réservation
+    const isInReservedRange = this.reservedRanges.some(range => {
+      const start = this.toDateOnly(range.start).getTime();
+      const end   = this.toDateOnly(range.end).getTime(); // [start, end)
+      return day >= start && day < end;
+    });
+
+    return !isInReservedRange;
+  };
+
+// Filtre pour la date de départ
+  endDateFilter = (date: Date | null): boolean => {
+    if (!date) return false;
+
+    const end = this.toDateOnly(date).getTime();
+
+    const today = this.toDateOnly(new Date()).getTime();
+    if (end < today) return false;
+
+    // On doit avoir choisi une date d'arrivée avant
+    if (!this.startDateModel) {
+      return false;
+    }
+
+    const start = this.toDateOnly(this.startDateModel).getTime();
+    // départ doit être après l'arrivée
+    if (end <= start) {
+      return false;
+    }
+
+    // Si aucun logement : pas de blocage spécial
+    if (!this.newBooking.propertyId) {
+      return true;
+    }
+
+    // ❗ Vérifier que l'intervalle [start, end) NE chevauche PAS
+    // une réservation existante pour ce logement
+    const overlaps = this.reservedRanges.some(range => {
+      const rs = this.toDateOnly(range.start).getTime();
+      const re = this.toDateOnly(range.end).getTime();
+
+      // condition de recouvrement d'intervalles :
+      // [start, end) et [rs, re) se chevauchent si :
+      // start < re && rs < end
+      return start < re && rs < end;
+    });
+
+    return !overlaps;
+  };
+
+
+  // ------- HELPERS D’AFFICHAGE --------
+  getNights(b: Booking): number {
+    const start = new Date(b.startDate);
+    const end = new Date(b.endDate);
+    const diffMs = end.getTime() - start.getTime();
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+    return isNaN(diffDays) ? 0 : diffDays;
+  }
+
+  getPricePerNight(b: Booking): number | null {
+    const nights = this.getNights(b);
+    if (!nights || nights <= 0) {
+      return null;
+    }
+    return (b.totalPrice || 0) / nights;
+  }
+
+  formatAmount(value: number | null | undefined): string {
+    const v = value || 0;
+    // format 1.000,00 style FR avec point pour les milliers
+    return v.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  formatPricePerNight(value: number): string {
+    return value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  getStatusClass(status?: string): string {
+    switch (status) {
+      case 'CONFIRMED':
+        return 'status-badge status-confirmed';
+      case 'PENDING':
+        return 'status-badge status-pending';
+      case 'CANCELED':
+        return 'status-badge status-canceled';
+      default:
+        return 'status-badge';
+    }
+  }
+
+  isToday(dateStr: string | Date | undefined): boolean {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const today = new Date();
+    d.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return d.getTime() === today.getTime();
+  }
+
+  // ------- EXPORT CSV --------
+  exportToCsv(): void {
+    const data = this.filteredBookings;
+    if (!data.length) {
+      this.errorMessage = 'Aucune réservation à exporter.';
+      return;
+    }
+
+    const rows = data.map((b) => {
+      const nights = this.getNights(b);
+      const pricePerNight = this.getPricePerNight(b);
+
+      return {
+        id: b.id ?? '',
+        propertyId: b.propertyId,
+        guestName: b.guestName,
+        guestEmail: b.guestEmail,
+        startDate: b.startDate,
+        endDate: b.endDate,
+        nights,
+        totalPrice: this.formatAmount(b.totalPrice),
+        pricePerNight: pricePerNight != null ? this.formatPricePerNight(pricePerNight) : '',
+        status: b.status
+      };
+    });
+
+    const headers = Object.keys(rows[0]);
+
+    const csvContent =
+      headers.join(';') + '\n' +
+      rows
+        .map((r) =>
+          headers
+            .map((h) => {
+              const value = (r as any)[h] ?? '';
+              return `"${String(value).replace(/"/g, '""')}"`
+            })
+            .join(';')
+        )
+        .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'reservations.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    window.URL.revokeObjectURL(url);
+  }
+
+  onPropertyChange(): void {
+    this.refreshReservedRanges();
+  }
+
+  // ------- ANNULATION --------
   cancelBooking(booking: Booking): void {
     if (!booking.id) {
       return;
@@ -263,9 +517,16 @@ export class BookingsComponent implements OnInit {
 
     this.bookingService.cancel(booking.id).subscribe({
       next: () => {
-        // on recharge la liste depuis l'API
+        // On met à jour le statut en front
+        booking.status = 'CANCELED';
+
         this.successMessage = 'Réservation annulée avec succès';
-        this.loadBookings();
+
+        // On met à jour les plages réservées pour le datepicker
+        if (booking.propertyId === this.newBooking.propertyId) {
+          this.refreshReservedRanges();
+        }
+
         this.cdr.detectChanges();
       },
       error: (err) => {

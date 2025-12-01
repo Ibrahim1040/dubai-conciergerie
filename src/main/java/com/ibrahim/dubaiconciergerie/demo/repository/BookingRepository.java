@@ -12,20 +12,21 @@ import java.util.List;
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("""
-        SELECT COUNT(b)
-        FROM Booking b
-        WHERE b.property = :property
-          AND b.status <> :canceled
-          AND (
-                (:startDate BETWEEN b.startDate AND b.endDate)
-             OR (:endDate   BETWEEN b.startDate AND b.endDate)
-             OR (b.startDate BETWEEN :startDate AND :endDate)
-          )
+    SELECT COUNT(b)
+    FROM Booking b
+    WHERE b.property = :property
+      AND b.status <> :excludedStatus
+      AND b.startDate < :endDate
+      AND b.endDate > :startDate
     """)
-    long countActiveBookingsInRange(@Param("property") Property property,
-                                    @Param("startDate") LocalDate startDate,
-                                    @Param("endDate") LocalDate endDate,
-                                    @Param("canceled") Booking.Status canceled);
+    long countActiveBookingsInRange(
+            @Param("property") Property property,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("excludedStatus") Booking.Status excludedStatus
+    );
+
+
 
     List<Booking> findByProperty(Property property);
 

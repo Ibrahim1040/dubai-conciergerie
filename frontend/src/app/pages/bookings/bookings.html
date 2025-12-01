@@ -12,6 +12,7 @@
       {{ successMessage }}
     </div>
 
+    <!-- FILTRES -->
     <div class="filters">
       <div class="form-inline">
         <label>Client</label>
@@ -58,16 +59,28 @@
       >
         ⟲ Réinitialiser
       </button>
-
     </div>
 
 
+    <div class="form-inline">
+      <label>
+        <input
+          type="checkbox"
+          [(ngModel)]="excludeCanceled"
+          name="excludeCanceled"
+        />
+        Exclure les annulations
+      </label>
+    </div>
+
+    <!-- FORMULAIRE DE CRÉATION -->
     <form #bookingForm="ngForm" (ngSubmit)="createBooking()">
       <div class="form-group">
         <label>ID du logement (propertyId)</label>
         <input type="number"
                [(ngModel)]="newBooking.propertyId"
                name="propertyId"
+               (ngModelChange)="onPropertyChange()"
                required />
       </div>
 
@@ -87,21 +100,38 @@
                required />
       </div>
 
+      <!-- 🔵 Date d'arrivée AVEC Angular Material + filtre -->
       <div class="form-group">
         <label>Date d'arrivée (startDate)</label>
-        <input type="date"
-               [(ngModel)]="newBooking.startDate"
-               name="startDate"
-               [min]="todayString"
-               required />
+        <mat-form-field appearance="outline" class="full-width">
+          <input
+            matInput
+            [matDatepicker]="pickerStart"
+            [(ngModel)]="startDateModel"
+            name="startDateModel"
+            [matDatepickerFilter]="startDateFilter"
+            required
+          />
+          <mat-datepicker-toggle matSuffix [for]="pickerStart"></mat-datepicker-toggle>
+          <mat-datepicker #pickerStart></mat-datepicker>
+        </mat-form-field>
       </div>
 
+      <!-- 🔵 Date de départ AVEC Angular Material + filtre -->
       <div class="form-group">
         <label>Date de départ (endDate)</label>
-        <input type="date"
-               [(ngModel)]="newBooking.endDate"
-               name="endDate"
-               required />
+        <mat-form-field appearance="outline" class="full-width">
+          <input
+            matInput
+            [matDatepicker]="pickerEnd"
+            [(ngModel)]="endDateModel"
+            name="endDateModel"
+            [matDatepickerFilter]="endDateFilter"
+            required
+          />
+          <mat-datepicker-toggle matSuffix [for]="pickerEnd"></mat-datepicker-toggle>
+          <mat-datepicker #pickerEnd></mat-datepicker>
+        </mat-form-field>
       </div>
 
       <div class="form-group">
@@ -125,6 +155,7 @@
 
       <button type="submit">Créer la réservation</button>
     </form>
+
   </div>
 
   <!-- Liste -->
@@ -133,58 +164,72 @@
 
     <div *ngIf="loading">Chargement...</div>
 
-    <table *ngIf="!loading && bookings.length > 0">
+    <table *ngIf="!loading && filteredBookings.length > 0">
       <thead>
       <tr>
-        <th>ID</th>
-        <th>PropertyId</th>
+        <th>#</th>
+        <th>Logement</th>
         <th>Client</th>
         <th>Email</th>
         <th>Arrivée</th>
         <th>Départ</th>
+        <th>Nuits</th>
         <th>Prix total</th>
+        <th>Prix/nuit</th>
         <th>Statut</th>
         <th>Actions</th>
       </tr>
       </thead>
       <tbody>
       <tr *ngFor="let b of filteredBookings">
-
-      <td>{{ b.id }}</td>
+        <td>{{ b.id }}</td>
         <td>{{ b.propertyId }}</td>
         <td>{{ b.guestName }}</td>
         <td>{{ b.guestEmail }}</td>
-        <!--  formatage -->
-        <td>{{ b.startDate | date:'dd/MM/yyyy' }}</td>
-        <td>{{ b.endDate   | date:'dd/MM/yyyy' }}</td>
-        <td>{{ formatPrice(b.totalPrice) }} €</td>
+
         <td>
-            <span [ngClass]="getStatusClass(b.status)">
-              {{ b.status }}
-            </span>
+          {{ b.startDate | date:'dd/MM/yyyy' }}
+          <span *ngIf="isToday(b.startDate)" class="badge-today">
+            AUJOURD'HUI
+          </span>
+        </td>
+        <td>{{ b.endDate | date:'dd/MM/yyyy' }}</td>
+        <td>{{ getNights(b) }}</td>
+        <td>
+          {{ formatAmount(b.totalPrice) }} €
         </td>
         <td>
-          <!-- Si la réservation n'est pas annulée -->
+          <ng-container *ngIf="getPricePerNight(b) as p; else noPrice">
+            {{ formatPricePerNight(p) }} €
+          </ng-container>
+          <ng-template #noPrice>-</ng-template>
+        </td>
+        <td>
+          <span [ngClass]="getStatusClass(b.status)">
+            {{ b.status }}
+          </span>
+        </td>
+        <td>
           <button
             type="button"
-            *ngIf="b.status !== 'CANCELED'; else cancelledTpl"
+            class="btn-cancel"
             (click)="cancelBooking(b)"
-          >
-            Annuler
+            [disabled]="b.status === 'CANCELED'">
+            {{ b.status === 'CANCELED' ? 'Annulé' : 'Annuler' }}
           </button>
-
-          <!-- Template affiché quand status = CANCELED -->
-          <ng-template #cancelledTpl>
-            <button type="button" disabled>
-              Annulé
-            </button>
-          </ng-template>
         </td>
-
       </tr>
       </tbody>
     </table>
 
+    <!-- cas : la base a des réservations mais les filtres les cachent toutes -->
+    <div *ngIf="!loading
+            && bookings.length > 0
+            && filteredBookings.length === 0">
+      Aucune réservation ne correspond à ces filtres.
+    </div>
+
+    <!-- cas : vraiment aucune réservation en base -->
     <div *ngIf="!loading && bookings.length === 0">
       Aucune réservation pour l’instant.
     </div>
