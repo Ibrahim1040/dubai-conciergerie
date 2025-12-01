@@ -1,10 +1,8 @@
-HELP.md
+# Backend (Spring Boot / Maven)
 target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+*.log
 
-### STS ###
+### STS / IntelliJ / VSCode / etc.
 .apt_generated
 .classpath
 .factorypath
@@ -12,14 +10,13 @@ target/
 .settings
 .springBeans
 .sts4-cache
-
-### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
+.vscode/
 
-### NetBeans ###
+# NetBeans / builds Java
 /nbproject/private/
 /nbbuild/
 /dist/
@@ -29,5 +26,7 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
-.vscode/
+# Frontend (Angular / Node)
+/**/node_modules/
+/**/dist/
+/**/.angular/

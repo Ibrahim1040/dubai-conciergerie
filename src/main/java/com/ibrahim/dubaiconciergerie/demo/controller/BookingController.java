@@ -16,7 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/owner/bookings")
-@CrossOrigin
+@CrossOrigin("http://localhost:4200")
 public class BookingController {
 
     private final BookingService bookingService;
@@ -32,25 +32,10 @@ public class BookingController {
     @Operation(summary = "Créer une réservation")
     public BookingDto createBooking(@RequestBody BookingDto dto) {
 
-        Property property = propertyService.getById(dto.getPropertyId());
-
-        Booking booking = Booking.builder()
-                .property(property)
-                .guestName(dto.getGuestName())
-                .guestEmail(dto.getGuestEmail())
-                .startDate(dto.getStartDate())
-                .endDate(dto.getEndDate())
-                .totalPrice(dto.getTotalPrice())
-                .status(
-                        dto.getStatus() != null
-                                ? Booking.Status.valueOf(dto.getStatus())
-                                : Booking.Status.PENDING
-                )
-                .build();
-
-        Booking saved = bookingService.create(booking);
+        Booking saved = bookingService.create(dto);
         return BookingMapper.toDto(saved);
     }
+
 
     @GetMapping("/property/{propertyId}")
     @Operation(summary = "Lister les réservations d'une propriété")

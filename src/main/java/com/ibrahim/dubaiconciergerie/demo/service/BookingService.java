@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface BookingService {
 
-    Booking create(Booking booking);
+    Booking create(BookingDto dto);
 
     List<Booking> getAll();
 

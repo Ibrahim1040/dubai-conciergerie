@@ -23,44 +23,18 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
         http
+                // Pour une API Angular, on désactive CSRF au début
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
+                // CORS: autoriser Angular (4200) à appeler l’API (8080)
+                .cors(cors -> {})
                 .authorizeHttpRequests(auth -> auth
-                        // SWAGGER ouvert
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**",
-                                "/swagger-resources/**",
-                                "/webjars/**",
-                                "/error"
-                        ).permitAll()
-
-                        // Auth ouvert
-                        .requestMatchers("/api/auth/**").permitAll()
-
-                        // Public accessible sans JWT
-                        .requestMatchers("/api/public/**").permitAll()
-
-                        // Contact requests admin
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
-                        // OWNER ou ADMIN peuvent gérer les bookings
-                        .requestMatchers("/api/bookings/**").permitAll()
-
-                        // Owner
-                        .requestMatchers("/api/owner/**").hasAnyRole("OWNER", "ADMIN")
-
-                        // Tout le reste nécessite un token JWT
-                        .anyRequest().authenticated()
-                )
-
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                    .httpBasic(_http -> _http.disable())
-                    .formLogin(form -> form.disable());
+                        // On ouvre les endpoints d'API pour l'instant
+                        .requestMatchers("/api/owner/bookings/**", "/api/owner/bookings").permitAll()
+                        .requestMatchers("/api/**").permitAll()
+                        // le reste on peut aussi ouvrir pour l’instant
+                        .anyRequest().permitAll()
+                );
 
         return http.build();
     }

@@ -27,6 +27,7 @@ public class BookingServiceImpl implements BookingService {
         this.propertyRepo = propertyRepo;
     }
 
+    @Override
     public Booking create(BookingDto dto) {
         Property property = propertyRepo.findById(dto.getPropertyId())
                 .orElseThrow(() -> new RuntimeException("Property not found"));
@@ -36,6 +37,15 @@ public class BookingServiceImpl implements BookingService {
 
         if (start == null || end == null || end.isBefore(start)) {
             throw new RuntimeException("StartDate et EndDate invalides");
+        }
+
+        // NOUVEAU : empêcher les dates passées
+        LocalDate today = LocalDate.now();
+        if (start.isBefore(today)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La date d'arrivée ne peut pas être dans le passé."
+            );
         }
 
         long conflicts = bookingRepo.countActiveBookingsInRange(
@@ -52,6 +62,14 @@ public class BookingServiceImpl implements BookingService {
             );
         }
 
+        // Déterminer le statut à utiliser
+        Booking.Status status = Booking.Status.PENDING; // valeur par défaut
+
+        if (dto.getStatus() != null) {
+            // dto.getStatus() = "CONFIRMED" / "PENDING" / "CANCELED"
+            status = Booking.Status.valueOf(dto.getStatus());
+        }
+
         Booking booking = Booking.builder()
                 .property(property)
                 .guestName(dto.getGuestName())
@@ -59,7 +77,7 @@ public class BookingServiceImpl implements BookingService {
                 .startDate(start)
                 .endDate(end)
                 .totalPrice(dto.getTotalPrice())
-                .status(Booking.Status.PENDING)
+                .status(status)
                 .build();
 
         return bookingRepo.save(booking);
@@ -78,11 +96,6 @@ public class BookingServiceImpl implements BookingService {
     @Transactional(readOnly = true)
     public List<Booking> getByProperty(Property property) {
         return bookingRepo.findByProperty(property);
-    }
-
-    @Override
-    public Booking create(Booking booking) {
-        return null;
     }
 
     @Override
