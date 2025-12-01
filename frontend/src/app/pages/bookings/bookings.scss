@@ -1,0 +1,183 @@
+.container {
+  max-width: 900px;
+  margin: 20px auto;
+}
+
+.card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.form-group {
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+input, select {
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  background: #1976d2;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #145aa3;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 6px;
+}
+
+th {
+  background: #f5f5f5;
+}
+
+.error {
+  color: #b00020;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.success {
+  color: #1b5e20;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-confirmed {
+  background-color: #d1f5e0;
+  color: #156340;
+}
+
+.status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-canceled {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+td button {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+td button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+td button:not([disabled]) {
+  background-color: #dc3545; // rouge "annuler"
+  color: #fff;
+}
+
+/* Bouton Annulé (désactivé) */
+td button[disabled] {
+  background-color: #e2e3e5; // gris clair
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: flex-end;
+}
+
+.filters .form-inline {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+}
+
+.filters .btn-reset {
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid #0d6efd;     // bleu
+  background-color: #ffffff;      // fond blanc
+  color: #0d6efd;                 // texte bleu
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease-in-out;
+  margin-left: 8px;
+}
+
+.filters .btn-reset:hover {
+  background-color: #0d6efd;      // fond bleu au survol
+  color: #ffffff;                 // texte blanc
+}
+
+.filters .btn-reset:active {
+  background-color: #0b5ed7;
+  border-color: #0b5ed7;
+  transform: translateY(1px);
+}
+
+.btn-reset {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #ced4da;
+  background: linear-gradient(to bottom, #ffffff, #f1f3f5);
+  color: #495057;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-reset:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.btn-reset:active {
+  background: #dee2e6;
+  transform: translateY(1px);
+}
+
+.btn-reset:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+
+
+
