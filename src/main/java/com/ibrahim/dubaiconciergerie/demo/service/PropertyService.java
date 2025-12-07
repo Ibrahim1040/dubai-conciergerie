@@ -3,6 +3,7 @@ package com.ibrahim.dubaiconciergerie.demo.service;
 import com.ibrahim.dubaiconciergerie.demo.dto.PropertyDto;
 import com.ibrahim.dubaiconciergerie.demo.entity.Property;
 import com.ibrahim.dubaiconciergerie.demo.entity.User;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -10,20 +11,19 @@ public interface PropertyService {
 
     List<Property> getAll();
 
-    Property create(PropertyDto dto);
+    Property createProperty(Property property);
 
     Property getById(Long id);
 
-    Property update(Long id, PropertyDto dto);
-
-    void delete(Long id);
-
-    List<Property> getByOwner(User owner);
-
     List<Property> getAllPublicProperties();
 
-    Property createProperty(Property property);
+    Property getPropertyForOwner(Long propertyId, User owner);
 
     List<Property> getPropertiesForOwner(User owner);
 
+    Property getOwnerProperty(Long ownerId, Long propertyId);
+
+    Property updateOwnerProperty(Long ownerId, Long propertyId, Property updates);
+
+    void deleteOwnerProperty(Long ownerId, Long propertyId);
 }

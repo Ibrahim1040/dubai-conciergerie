@@ -73,7 +73,7 @@ public class BookingController {
     // 👉 Nouveau : bookings d'un owner
     @GetMapping("/owner/{ownerId}")
     @Operation(summary = "Lister les réservations des propriétés d'un owner")
-    @PreAuthorize("hasAnyRole('ADMIN','OWNER')")
+    //@PreAuthorize("hasAnyRole('ADMIN','OWNER')")
     public List<Booking> getByOwner(@PathVariable Long ownerId) {
         return bookingService.getByOwner(ownerId);
     }

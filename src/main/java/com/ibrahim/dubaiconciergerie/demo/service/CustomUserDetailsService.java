@@ -1,33 +1,30 @@
-package com.ibrahim.dubaiconciergerie.demo.security;
+package com.ibrahim.dubaiconciergerie.demo.service;
 
+import com.ibrahim.dubaiconciergerie.demo.entity.User;
 import com.ibrahim.dubaiconciergerie.demo.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-    public CustomUserDetailsService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
-        com.ibrahim.dubaiconciergerie.demo.entity.User user =
-                userRepository.findByEmail(email)
-                        .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getEmail())
+        // ⚠️ ICI : on utilise roles(...) → Spring ajoutera "ROLE_" automatiquement
+        return org.springframework.security.core.userdetails.User
+                .withUsername(user.getEmail())
                 .password(user.getPassword())
-                .authorities("ROLE_" + user.getRole().name())
+                .roles(user.getRole().name())      // ex: OWNER → ROLE_OWNER
                 .build();
-
-
     }
 }

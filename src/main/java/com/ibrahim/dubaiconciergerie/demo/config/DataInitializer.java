@@ -1,47 +1,34 @@
 package com.ibrahim.dubaiconciergerie.demo.config;
 
 import com.ibrahim.dubaiconciergerie.demo.entity.User;
-import com.ibrahim.dubaiconciergerie.demo.entity.User.Role;
 import com.ibrahim.dubaiconciergerie.demo.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
-@Configuration
-public class DataInitializer {
+@Component
+@RequiredArgsConstructor
+public class DataInitializer implements CommandLineRunner {
 
-    @Bean
-    CommandLineRunner init(UserRepository userRepo, PasswordEncoder encoder) {
-        return args -> {
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-            if (userRepo.findByEmail("superadmin@example.com").isEmpty()) {
-                User admin = User.builder()
-                        .firstName("Super")
-                        .lastName("Admin")
-                        .email("superadmin@example.com")
-                        .password(encoder.encode("Admin2024")) // HASH OBLIGATOIRE
-                        .role(User.Role.ADMIN)
-                        .build();
+    @Override
+    public void run(String... args) {
 
-                userRepo.save(admin);
+        if (userRepository.findByEmail("ibrahim@gmail.com").isEmpty()) {
+            User owner = User.builder()
+                    .firstName("Ibrahim")
+                    .lastName("Aharrar")
+                    .email("ibrahim@gmail.com")
+                    .password(passwordEncoder.encode("Admin2024"))
+                    .role(User.Role.OWNER)
+                    .build();
 
-                System.out.println("🔥 ADMIN created: superadmin@example.com / Admin2024");
-            }
-            if (userRepo.findByEmail("admin@example.com").isEmpty()) {
-                User admin = User.builder()
-                        .firstName("Admin")
-                        .lastName("System")
-                        .email("admin@example.com")
-                        .password(encoder.encode("admin123"))
-                        .role(Role.ADMIN)
-                        .build();
-                userRepo.save(admin);
+            userRepository.save(owner);
+        }
 
-                System.out.println("🔥 ADMIN created: admin@example.com / admin123");
-            }
-
-        };
+        // tes autres users ADMIN si tu veux
     }
-
 }

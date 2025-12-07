@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @Builder
@@ -28,8 +30,8 @@ public class PropertyDto {
     @NotBlank
     private String rentalType; // SHORT_TERM ou LONG_TERM
 
-    private Double nightlyPrice;
-    private Double monthlyPrice;
+    private BigDecimal nightlyPrice;
+    private BigDecimal monthlyPrice;
 
     private Long ownerId; // très important
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -41,8 +42,8 @@ public class Property {
     @Column(nullable = false, length = 20)
     private RentalType rentalType;
 
-    private Double nightlyPrice;
-    private Double monthlyPrice;
+    private BigDecimal nightlyPrice;
+    private BigDecimal monthlyPrice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")

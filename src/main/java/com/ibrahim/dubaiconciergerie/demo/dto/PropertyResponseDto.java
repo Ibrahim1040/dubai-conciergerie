@@ -3,6 +3,8 @@ package com.ibrahim.dubaiconciergerie.demo.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 public class PropertyResponseDto {
@@ -12,7 +14,7 @@ public class PropertyResponseDto {
     private String address;
     private int capacity;
     private String rentalType;
-    private double nightlyPrice;
-    private double monthlyPrice;
+    private BigDecimal nightlyPrice;
+    private BigDecimal monthlyPrice;
     private Long ownerId; // toujours utile !
 }

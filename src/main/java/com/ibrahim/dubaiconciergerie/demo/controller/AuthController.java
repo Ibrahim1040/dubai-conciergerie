@@ -1,12 +1,13 @@
 package com.ibrahim.dubaiconciergerie.demo.controller;
 
-import com.ibrahim.dubaiconciergerie.demo.security.JwtUtil;
+import com.ibrahim.dubaiconciergerie.demo.config.JwtService;
 import com.ibrahim.dubaiconciergerie.demo.entity.User;
 import com.ibrahim.dubaiconciergerie.demo.repository.UserRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -14,48 +15,35 @@ public class AuthController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
+    private final JwtService jwtService;
 
     public AuthController(UserRepository userRepository,
                           PasswordEncoder passwordEncoder,
-                          JwtUtil jwtUtil) {
+                          JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/login")
     public AuthResponse login(@RequestBody LoginRequest request) {
 
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "Invalid credentials"));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        UserDetails userDetails = org.springframework.security.core.userdetails.User
+                .withUsername(user.getEmail())
+                .password(user.getPassword())
+                .authorities("ROLE_" + user.getRole().name()) // -> ROLE_OWNER
+                .build();
+
+        String token = jwtService.generateToken(userDetails);
 
         return new AuthResponse(token, user.getEmail(), user.getRole().name());
     }
-
-    @PostMapping("/admin/fix-all-passwords")
-    public String fixAllPasswords() {
-        List<User> users = userRepository.findAll();
-
-        for (User u : users) {
-            // Si déjà BCrypt, on ne touche pas
-            if (u.getPassword() != null && u.getPassword().startsWith("$2a$")) {
-                continue;
-            }
-
-            // Sinon on encode un nouveau mot de passe par défaut
-            String defaultPass = "ChangeMe123!";
-            u.setPassword(passwordEncoder.encode(defaultPass));
-            userRepository.save(u);
-        }
-
-        return "All passwords updated. Default password = ChangeMe123!";
-    }
-
 }

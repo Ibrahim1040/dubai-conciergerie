@@ -13,10 +13,4 @@ public class DubaiConciergerieApplication {
 		SpringApplication.run(DubaiConciergerieApplication.class, args);
 	}
 
-    /*@Bean
-    public PasswordEncoder passwordEncoder() {
-        // Encoder standard, largement suffisant
-        return new BCryptPasswordEncoder();
-    }*/
-
 }

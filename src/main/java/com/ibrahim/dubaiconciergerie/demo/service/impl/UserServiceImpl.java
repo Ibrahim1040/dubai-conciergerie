@@ -90,4 +90,9 @@ public class UserServiceImpl implements UserService {
         }
         userRepository.deleteById(id);
     }
+
+    @Override
+    public User getByEmail(String email) {
+        return null;
+    }
 }
