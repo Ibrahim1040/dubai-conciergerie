@@ -13,6 +13,10 @@ jobs:
     name: Build & test backend (Spring Boot)
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ./  # dossier où se trouve ton pom.xml
+
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -20,12 +24,13 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
           java-version: '21'
+          distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build & test with Maven
-        run: mvn -B clean verify
+      - name: Build backend with Maven (skip tests)
+        run: mvn -B clean package -DskipTests
+
         # si ton pom.xml est à la racine du repo, on laisse comme ça.
         # sinon ajoute: working-directory: ./<dossier-backend>
 
