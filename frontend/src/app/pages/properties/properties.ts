@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Property } from '../../models/property.model';
 import { PropertyService } from '../../services/property.service';
 import { APP_CONFIG } from '../../app-config';
+
 @Component({
   selector: 'app-properties',
   standalone: true,
@@ -27,7 +28,10 @@ export class PropertiesComponent implements OnInit {
   // filtre recherche
   filterCityOrTitle = '';
 
-  constructor(private propertyService: PropertyService) {}
+  constructor(
+    private propertyService: PropertyService,
+    private cdr: ChangeDetectorRef          // 👈 nouveau
+  ) {}
 
   ngOnInit(): void {
     this.loadProperties();
@@ -49,15 +53,21 @@ export class PropertiesComponent implements OnInit {
   loadProperties(): void {
     this.loading = true;
     this.errorMessage = '';
+
     this.propertyService.getOwnerProperties(this.ownerId).subscribe({
       next: (data) => {
-        this.properties = data;
+        this.properties = data ?? [];
         this.loading = false;
+        this.cdr.detectChanges();           // 👈 force MAJ de la vue
       },
       error: (err) => {
         console.error('Erreur GET /api/owner/properties', err);
         this.loading = false;
-        this.errorMessage = this.extractErrorMessage(err, 'Erreur lors du chargement des logements.');
+        this.errorMessage = this.extractErrorMessage(
+          err,
+          'Erreur lors du chargement des logements.'
+        );
+        this.cdr.detectChanges();           // 👈 idem en cas d’erreur
       }
     });
   }
@@ -76,42 +86,59 @@ export class PropertiesComponent implements OnInit {
     this.current = this.emptyProperty();
     this.errorMessage = '';
     this.successMessage = '';
+    this.cdr.detectChanges();               // optionnel mais propre
+  }
+
+  editProperty(p: Property): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.current = { ...p };                // clone
+    this.cdr.detectChanges();
   }
 
   saveProperty(): void {
     this.errorMessage = '';
     this.successMessage = '';
 
-    // validations front basées sur le DTO
     if (!this.current.title || !this.current.city || !this.current.address) {
-      this.errorMessage = 'title, city et address sont obligatoires.';
-      return;
-    }
-    if (!this.current.rentalType) {
-      this.errorMessage = 'rentalType est obligatoire.';
-      return;
-    }
-    if (!this.current.capacity || this.current.capacity < 1) {
-      this.errorMessage = 'capacity doit être au moins 1.';
+      this.errorMessage = 'Titre, ville et adresse sont obligatoires.';
       return;
     }
 
     const payload: Property = {
       ...this.current,
-      ownerId: this.ownerId,
-      nightlyPrice: this.current.nightlyPrice ?? null,
-      monthlyPrice: this.current.monthlyPrice ?? null
+      ownerId: this.ownerId
     };
 
-    this.propertyService.createOwnerProperty(this.ownerId, payload).subscribe({
-      next: (created) => {
-        this.successMessage = 'Logement créé avec succès.';
-        this.properties = [...this.properties, created];
-        this.resetForm();
+    const obs = this.current.id
+      ? this.propertyService.updateOwnerProperty(
+          this.ownerId,
+          this.current.id!,   // ID logement
+          payload
+        )
+      : this.propertyService.createOwnerProperty(this.ownerId, payload);
+
+    obs.subscribe({
+      next: (saved) => {
+        if (this.current.id) {
+          // mise à jour
+          this.properties = this.properties.map(p =>
+            p.id === saved.id ? saved : p
+          );
+          this.successMessage = 'Logement mis à jour avec succès.';
+        } else {
+          // ajout
+          this.properties = [...this.properties, saved];
+          this.successMessage = 'Logement créé avec succès.';
+        }
+
+        this.current = this.emptyProperty();
+        this.cdr.detectChanges();           // 👈 refresh après save
       },
       error: (err) => {
-        console.error('Erreur POST /api/owner/properties', err);
-        this.errorMessage = this.extractErrorMessage(err, 'Erreur lors de la création du logement.');
+        console.error('Erreur saveProperty', err);
+        this.errorMessage = 'Erreur lors de l’enregistrement du logement.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -135,4 +162,32 @@ export class PropertiesComponent implements OnInit {
     if (err.message) return err.message;
     return fallback;
   }
+
+  deleteProperty(p: Property): void {
+    if (!p.id) {
+      return;
+    }
+
+    const ok = confirm(`Supprimer le logement "${p.title}" ?`);
+    if (!ok) {
+      return;
+    }
+
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.propertyService.deleteOwnerProperty(this.ownerId, p.id).subscribe({
+      next: () => {
+        this.properties = this.properties.filter(prop => prop.id !== p.id);
+        this.successMessage = 'Logement supprimé avec succès.';
+        this.cdr.detectChanges();           // 👈 refresh après delete
+      },
+      error: (err) => {
+        console.error('Erreur deleteProperty', err);
+        this.errorMessage = 'Erreur lors de la suppression du logement.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
 }

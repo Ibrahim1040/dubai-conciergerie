@@ -3,12 +3,39 @@ spring:
     url: jdbc:mysql://localhost:3306/dubai_concierge?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
     password:
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
     properties:
       hibernate.format_sql: true
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+    consumer:
+      group-id: dubai-conciergerie
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: "*"
+
+app:
+  kafka:
+    enabled: false
+    topics:
+      booking-created: booking.created
 
 server:
   port: 8080
@@ -19,6 +46,4 @@ application:
   security:
     jwt:
       secret-key: ZmFrZV9qbV9zZWNyZXRfZm9yX2R1YmFpX2NvbmNpZXJnZXJpZQ==
-      expiration: 86400000   # 24h en millisecondes
-
-
+      expiration: 86400000 # 24h

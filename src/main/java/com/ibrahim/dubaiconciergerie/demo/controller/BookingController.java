@@ -8,8 +8,9 @@ import com.ibrahim.dubaiconciergerie.demo.service.BookingService;
 import com.ibrahim.dubaiconciergerie.demo.service.PropertyService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,31 +29,25 @@ public class BookingController {
         this.propertyService = propertyService;
     }
 
-    @PostMapping
-    @Operation(summary = "Créer une réservation")
-    public BookingDto createBooking(@RequestBody BookingDto dto) {
-
+    @PostMapping(produces = "application/json")
+    public ResponseEntity<BookingDto> createBooking(@Valid @RequestBody BookingDto dto) {
         Booking saved = bookingService.create(dto);
-        return BookingMapper.toDto(saved);
+        return ResponseEntity.status(201).body(BookingMapper.toDto(saved));
     }
 
 
     @GetMapping("/property/{propertyId}")
-    @Operation(summary = "Lister les réservations d'une propriété")
-    public List<BookingDto> getBookingsForProperty(@PathVariable Long propertyId) {
-        Property property = propertyService.getById(propertyId);
-        List<Booking> bookings = bookingService.getByProperty(property);
-        return bookings.stream()
-                .map(BookingMapper::toDto)
-                .toList();
+    @Operation(summary = "Lister les réservations d'une propriété (paginé)")
+    public Page<BookingDto> getBookingsForProperty(@PathVariable Long propertyId, Pageable pageable) {
+        return bookingService.getByProperty(propertyId, pageable)
+                .map(BookingMapper::toDto);
     }
 
     @GetMapping
     @Operation(summary = "Lister toutes les réservations")
-    public List<BookingDto> getBookings() {
-        return bookingService.getAll().stream()
-                .map(BookingMapper::toDto)
-                .toList();
+    public Page<BookingDto> getBookings(Pageable pageable) {
+        return bookingService.getAll(pageable)
+                .map(BookingMapper::toDto);
     }
 
     @DeleteMapping("/{id}")
@@ -62,20 +57,12 @@ public class BookingController {
         return ResponseEntity.noContent().build(); // 204
     }
 
-   /* // 👉 Nouveau : bookings d'une propriété
-    @GetMapping("/property/{propertyId}")
-    @Operation(summary = "Lister les réservations d'une propriété")
-    @PreAuthorize("hasAnyRole('ADMIN','OWNER')")
-    public List<Booking> getByProperty(@PathVariable Long propertyId) {
-        return bookingService.getByProperty(propertyId);
-    }*/
-
     // 👉 Nouveau : bookings d'un owner
     @GetMapping("/owner/{ownerId}")
-    @Operation(summary = "Lister les réservations des propriétés d'un owner")
-    //@PreAuthorize("hasAnyRole('ADMIN','OWNER')")
-    public List<Booking> getByOwner(@PathVariable Long ownerId) {
-        return bookingService.getByOwner(ownerId);
+    @Operation(summary = "Lister les réservations des propriétés d'un owner (paginé)")
+    public Page<BookingDto> getByOwner(@PathVariable Long ownerId, Pageable pageable) {
+        return bookingService.getByOwner(ownerId, pageable)
+                .map(BookingMapper::toDto);
     }
 
     @GetMapping("/{id}")

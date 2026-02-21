@@ -18,28 +18,22 @@ public class BookingMapper {
                 .build();
     }
 
-    public static BookingDto toDto(Booking booking) {
-        if (booking == null) {
-            return null;
-        }
+        public static BookingDto toDto(Booking b) {
+            if (b == null) return null;
 
-        return BookingDto.builder()
-                .id(booking.getId())
-                .propertyId(
-                        booking.getProperty() != null
-                                ? booking.getProperty().getId()
-                                : null
-                )
-                .guestName(booking.getGuestName())
-                .guestEmail(booking.getGuestEmail())
-                .startDate(booking.getStartDate())
-                .endDate(booking.getEndDate())
-                .totalPrice(booking.getTotalPrice())
-                .status(
-                        booking.getStatus() != null
-                                ? booking.getStatus().name()
-                                : null
-                )
-                .build();
+            Long propertyId = (b.getProperty() != null) ? b.getProperty().getId() : null;
+            String status = (b.getStatus() != null) ? b.getStatus().name() : null;
+
+            return BookingDto.builder()
+                    .id(b.getId())
+                    .propertyId(propertyId)
+                    .guestName(b.getGuestName())
+                    .guestEmail(b.getGuestEmail())
+                    .startDate(b.getStartDate())
+                    .endDate(b.getEndDate())
+                    .totalPrice(b.getTotalPrice())
+                    .status(status)
+                    .build();
+        }
     }
-}
+

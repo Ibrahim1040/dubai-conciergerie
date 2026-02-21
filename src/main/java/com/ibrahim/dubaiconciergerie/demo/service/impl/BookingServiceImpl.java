@@ -3,9 +3,14 @@ package com.ibrahim.dubaiconciergerie.demo.service.impl;
 import com.ibrahim.dubaiconciergerie.demo.dto.BookingDto;
 import com.ibrahim.dubaiconciergerie.demo.entity.Booking;
 import com.ibrahim.dubaiconciergerie.demo.entity.Property;
+import com.ibrahim.dubaiconciergerie.demo.kafka.event.BookingCreatedEvent;
+import com.ibrahim.dubaiconciergerie.demo.kafka.producer.BookingEventProducer;
 import com.ibrahim.dubaiconciergerie.demo.repository.BookingRepository;
 import com.ibrahim.dubaiconciergerie.demo.repository.PropertyRepository;
 import com.ibrahim.dubaiconciergerie.demo.service.BookingService;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,11 +25,15 @@ public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepo;
     private final PropertyRepository propertyRepo;
+    private final ObjectProvider<BookingEventProducer> producerProvider;
 
     public BookingServiceImpl(BookingRepository bookingRepo,
-                              PropertyRepository propertyRepo) {
+                              PropertyRepository propertyRepo,
+                              ObjectProvider<BookingEventProducer> producerProvider) {
         this.bookingRepo = bookingRepo;
         this.propertyRepo = propertyRepo;
+
+        this.producerProvider = producerProvider;
     }
 
     @Override
@@ -80,7 +89,18 @@ public class BookingServiceImpl implements BookingService {
                 .status(status)
                 .build();
 
-        return bookingRepo.save(booking);
+        Booking saved = bookingRepo.save(booking);
+        producerProvider.ifAvailable(p ->
+        p.send(new BookingCreatedEvent(saved.getId(), saved.getProperty().getId(), saved.getGuestName()))
+        );
+
+        return saved;
+
+    }
+
+    @Override
+    public Page<Booking> getAll(Pageable pageable) {
+        return bookingRepo.findAll(pageable);
     }
 
 
@@ -196,5 +216,15 @@ public class BookingServiceImpl implements BookingService {
                 .totalPrice(saved.getTotalPrice())
                 .status(saved.getStatus().name())
                 .build();
+    }
+
+    @Override
+    public Page<Booking> getByProperty(Long propertyId, Pageable pageable) {
+        return bookingRepo.findByPropertyIdOrderByStartDateAsc(propertyId,pageable);
+    }
+
+    @Override
+    public Page<Booking> getByOwner(Long ownerId, Pageable pageable) {
+        return bookingRepo.findByPropertyOwnerId(ownerId,pageable);
     }
 }

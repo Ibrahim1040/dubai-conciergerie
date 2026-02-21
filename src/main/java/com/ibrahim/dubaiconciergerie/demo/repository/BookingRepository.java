@@ -2,10 +2,11 @@ package com.ibrahim.dubaiconciergerie.demo.repository;
 
 import com.ibrahim.dubaiconciergerie.demo.entity.Booking;
 import com.ibrahim.dubaiconciergerie.demo.entity.Property;
+import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
+import org.springframework.data.domain.Pageable;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -31,6 +32,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByProperty(Property property);
 
     List<Booking> findByGuestEmail(String guestEmail);
+
+    Page<Booking> findByPropertyIdOrderByStartDateAsc(Long propertyId, Pageable pageable);
+
+    Page<Booking> findByPropertyOwnerId(Long ownerId, Pageable pageable);
 
     List<Booking> findByPropertyIdOrderByStartDateAsc(Long propertyId);
 

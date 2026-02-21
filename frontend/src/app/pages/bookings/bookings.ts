@@ -14,6 +14,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatNativeDateModule } from '@angular/material/core';
 import { BookingService } from '../../services/booking.service';
 import { Booking } from '../../models/booking.model';
+import { Property } from '../../models/property.model';
+import { PropertyService } from '../../services/property.service';
+import { APP_CONFIG } from '../../app-config';
+
 
 @Component({
   selector: 'app-bookings',
@@ -29,6 +33,9 @@ import { Booking } from '../../models/booking.model';
   styleUrl: './bookings.scss'
 })
 export class BookingsComponent implements OnInit {
+
+  readonly ownerId = APP_CONFIG.defaultOwnerId;   // 👈 même logique que properties
+  properties: Property[] = []; 
 
   @ViewChild('bookingForm') bookingForm!: NgForm;
 
@@ -67,11 +74,13 @@ export class BookingsComponent implements OnInit {
 
   constructor(
     private bookingService: BookingService,
+    private propertiesService: PropertyService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.loadBookings();
+    this.loadOwnerProperties();
   }
 
   // ------- FILTRAGE + RÉSUMÉ --------
@@ -151,36 +160,44 @@ export class BookingsComponent implements OnInit {
     );
   }
 
+  private loadOwnerProperties(): void {
+  this.propertiesService.getOwnerProperties(this.ownerId).subscribe({
+    next: (data: Property[]) => {
+      this.properties = data ?? [];
+      console.log('PROPERTIES chargées pour Bookings :', this.properties);
+      this.cdr.detectChanges();
+    },
+    error: (err: any) => {
+      console.error('Erreur chargement logements pour réservations', err);
+      // ce n’est pas bloquant pour afficher les réservations
+    }
+  });
+}
+
+
+
   // ------- CHARGEMENT --------
-  loadBookings(): void {
-    this.loading = true;
-    this.errorMessage = '';
+  // ------- CHARGEMENT --------
+loadBookings(): void {
+  this.loading = true;
+  this.errorMessage = '';
 
-    this.bookingService.getAll().subscribe({
-      next: (data) => {
-        this.bookings = data;
+  this.bookingService.getAll().subscribe({
+    next: (data) => {
+      console.log('Bookings reçues', data);
+      this.bookings = data ?? [];
+      this.loading = false;
+      this.cdr.detectChanges();   // ⬅ force la mise à jour de la vue
+    },
+    error: (err) => {
+      console.error('GET bookings -> ERREUR', err);
+      this.loading = false;
+      this.errorMessage = 'Erreur lors du chargement des réservations';
+      this.cdr.detectChanges();   // ⬅ idem en cas d’erreur
+    }
+  });
+}
 
-        // on n’est plus en chargement
-        this.loading = false;
-
-        // on reset les dates du formulaire de création
-        this.startDateModel = null;
-        this.endDateModel = null;
-
-        // on met à jour les plages réservées pour le datepicker
-        this.refreshReservedRanges();
-
-        // si ton résumé est calculé dans le getter filteredBookings,
-        // pas besoin d'appeler computeSummary ici :
-        // this.computeSummary(this.filteredBookings);  // optionnel
-      },
-      error: (err) => {
-        console.error('GET bookings -> ERREUR', err);
-        this.loading = false;
-        this.errorMessage = 'Erreur lors du chargement des réservations';
-      }
-    });
-  }
 
 
   private refreshReservedRanges(): void {
@@ -408,6 +425,34 @@ export class BookingsComponent implements OnInit {
     }
     return (b.totalPrice || 0) / nights;
   }
+
+  getPropertyLabel(propertyId?: number | string | null): string {
+  if (propertyId == null) {
+    return '-';
+  }
+
+  // on cast en nombre si c’est une string
+  const id = typeof propertyId === 'string' ? Number(propertyId) : propertyId;
+
+  if (!id || Number.isNaN(id)) {
+    return '-';
+  }
+
+  const prop = this.properties.find(p => p.id === id);
+
+  if (!prop) {
+    console.warn(
+      'Aucun logement trouvé pour propertyId =',
+      propertyId,
+      'dans',
+      this.properties
+    );
+    return `#${propertyId}`;   // fallback
+  }
+
+  return `${prop.title} (${prop.city})`;
+}
+
 
   formatAmount(value: number | null | undefined): string {
     const v = value || 0;

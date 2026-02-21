@@ -95,9 +95,9 @@
       </div>
 
       <div class="form-actions">
-        <button type="submit">Créer</button>
-        <button type="button" class="btn-secondary" (click)="resetForm()">
-          Réinitialiser
+       <button type="button" (click)="resetForm()">Réinitialiser</button>
+        <button type="submit">
+          {{ current.id ? 'Mettre à jour' : 'Créer' }}
         </button>
       </div>
     </form>
@@ -119,52 +119,66 @@
       </div>
     </div>
 
-    <div *ngIf="loading">Chargement…</div>
+      <!-- message de chargement -->
+      <div *ngIf="loading">Chargement...</div>
 
-    <table *ngIf="!loading && filteredProperties.length > 0">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Titre</th>
-          <th>Ville</th>
-          <th>Adresse</th>
-          <th>Capacité</th>
-          <th>Type</th>
-          <th>Prix / nuit</th>
-          <th>Prix / mois</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let p of filteredProperties">
-          <td>{{ p.id }}</td>
-          <td>{{ p.title }}</td>
-          <td>{{ p.city }}</td>
-          <td>{{ p.address }}</td>
-          <td>{{ p.capacity }}</td>
-          <td>
-            <span class="badge"
-              [ngClass]="{
-                'badge-short': p.rentalType === 'SHORT_TERM',
-                'badge-long':  p.rentalType === 'LONG_TERM'
-              }">
-              {{ p.rentalType }}
-            </span>
-          </td>
-          <td>
-            <ng-container *ngIf="p.nightlyPrice != null; else noNight">
-              {{ p.nightlyPrice | number: '1.0-2' }} €
-            </ng-container>
-            <ng-template #noNight>-</ng-template>
-          </td>
-          <td>
-            <ng-container *ngIf="p.monthlyPrice != null; else noMonth">
-              {{ p.monthlyPrice | number: '1.0-2' }} €
-            </ng-container>
-            <ng-template #noMonth>-</ng-template>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+      <!-- message d'erreur -->
+      <div *ngIf="!loading && errorMessage" class="error">
+        {{ errorMessage }}
+      </div>
+
+    <table
+  *ngIf="!loading && !errorMessage && filteredProperties.length > 0"
+  class="table table-striped"
+>
+  <thead>
+  <tr>
+    <th>Titre</th>
+    <th>Ville</th>
+    <th>Adresse</th>
+    <th>Capacité</th>
+    <th>Type</th>
+    <th>Prix / nuit</th>
+    <th>Prix / mois</th>
+    <th>Actions</th>
+  </tr>
+  </thead>
+
+  <tbody>
+  <tr *ngFor="let p of filteredProperties">
+    <td>{{ p.title }}</td>
+    <td>{{ p.city }}</td>
+    <td>{{ p.address }}</td>
+    <td>{{ p.capacity }}</td>
+    <td>{{ p.rentalType }}</td>
+
+    <!-- UNE SEULE version des prix, formatée -->
+    <td>
+      {{ p.nightlyPrice != null ? (p.nightlyPrice | number:'1.0-0') + ' €' : '-' }}
+    </td>
+    <td>
+      {{ p.monthlyPrice != null ? (p.monthlyPrice | number:'1.0-0') + ' €' : '-' }}
+    </td>
+
+    <td>
+      <button
+        type="button"
+        class="btn btn-sm btn-primary"
+        (click)="editProperty(p)">
+        Modifier
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-sm btn-danger"
+        (click)="deleteProperty(p)">
+        Supprimer
+      </button>
+    </td>
+  </tr>
+  </tbody>
+</table>
+
 
     <div *ngIf="!loading && filteredProperties.length === 0">
       Aucun logement ne correspond à ces critères.

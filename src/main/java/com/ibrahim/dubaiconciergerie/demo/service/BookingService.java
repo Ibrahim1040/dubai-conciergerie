@@ -3,12 +3,16 @@ package com.ibrahim.dubaiconciergerie.demo.service;
 import com.ibrahim.dubaiconciergerie.demo.dto.BookingDto;
 import com.ibrahim.dubaiconciergerie.demo.entity.Booking;
 import com.ibrahim.dubaiconciergerie.demo.entity.Property;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
 public interface BookingService {
 
     Booking create(BookingDto dto);
+
+    Page<Booking> getAll(Pageable pageable);
 
     List<Booking> getAll();
 
@@ -27,6 +31,10 @@ public interface BookingService {
     List<Booking> getByOwner(Long ownerId);
 
     BookingDto update(Long id, BookingDto dto);
+
+    Page<Booking> getByProperty(Long propertyId, Pageable pageable);
+
+    Page<Booking> getByOwner(Long ownerId, Pageable pageable);
 
 
 }
